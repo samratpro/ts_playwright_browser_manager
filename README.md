@@ -13,6 +13,14 @@ A powerful TypeScript-based Browser Manager for Playwright that simplifies manag
 
 ## 📦 Installation
 
+### **Fix  type module if missing in package.json**
+```json
+{
+  "type": "module",
+  "main": "index.js",
+}
+```
+
 ### **Method 1: Install from GitHub (Recommended)**
 ```bash
 npm install github:samratpro/ts_playwright_browser_manager
