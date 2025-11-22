@@ -45,6 +45,31 @@ npm run build
 
 ## 🚀 Quick Start
 
+### **Profile Setup with Cookie**
+```ts
+import { BrowserManager } from 'ts_playwright_browser_manager';
+
+const manager = new BrowserManager({ debugPort: 9221 });
+
+async function profileExample() {
+  const profileName = 'facebook_profile';
+
+  if (!manager.profileExists(profileName)) {
+    console.log('Setting up new profile...');
+    await manager.setupProfile(
+      profileName,
+      'https://www.facebook.com',
+      'Please login and close the browser to save session.'
+    );
+  }
+
+  const { page } = await manager.connectToBrowser(profileName);
+  console.log('Using existing profile!');
+  await manager.closeBrowser();
+}
+profileExample();
+```
+
 ### **Basic Usage Without Proxy**
 ```ts
 import { BrowserManager } from 'ts_playwright_browser_manager';
@@ -54,8 +79,8 @@ const manager = new BrowserManager({ debugPort: 9221 });
 async function main() {
   try {
     const { page, context, browser } = await manager.connectToBrowser(
-      'my_profile',
-      'https://example.com'
+      'facebook_profile',
+      'https://www.facebook.com/'
     );
 
     console.log('Page title:', await page.title());
@@ -127,32 +152,6 @@ interface ProxyConfig {
   server: string;
   username?: string;
   password?: string;
-}
-```
-
-## 🎯 Advanced Usage Examples
-
-### **Profile Management**
-```ts
-import { BrowserManager } from 'ts_playwright_browser_manager';
-
-const manager = new BrowserManager({ debugPort: 9221 });
-
-async function profileExample() {
-  const profileName = 'facebook_profile';
-
-  if (!manager.profileExists(profileName)) {
-    console.log('Setting up new profile...');
-    await manager.setupProfile(
-      profileName,
-      'https://www.facebook.com',
-      'Please login and close the browser to save session.'
-    );
-  }
-
-  const { page } = await manager.connectToBrowser(profileName);
-  console.log('Using existing profile!');
-  await manager.closeBrowser();
 }
 ```
 
