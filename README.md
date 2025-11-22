@@ -32,6 +32,7 @@ git clone https://github.com/samratpro/ts_playwright_browser_manager.git
 cd ts_playwright_browser_manager
 npm install
 npm run build
+# Copy dist/ to your project
 ```
 
 ### **Method 3: Add as Git Submodule**
@@ -40,16 +41,6 @@ git submodule add https://github.com/samratpro/ts_playwright_browser_manager.git
 cd libs/playwright-browser-manager
 npm install
 npm run build
-```
-
-### **Method 4: Copy Built Files**
-```bash
-git clone https://github.com/samratpro/ts_playwright_browser_manager.git
-cd ts_playwright_browser_manager
-npm install
-npm run build
-
-# Copy dist/ to your project
 ```
 
 ## 🚀 Quick Start
