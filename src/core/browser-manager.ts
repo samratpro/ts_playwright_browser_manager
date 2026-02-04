@@ -10,6 +10,7 @@ import type { Browser, BrowserContext } from 'playwright';
 import type {
   BrowserManagerOptions,
   ProxyConnectionOptions,
+  ProxyConnectionWithoutProfileOptions,
   BrowserPath,
   BrowserConnectionResult
 } from '../types/index.js';
@@ -425,6 +426,120 @@ export class BrowserManager {
         if (fs.existsSync(tempUserDataDir)) {
           fs.rmSync(tempUserDataDir, { recursive: true, force: true });
           this.debugLog(`Cleaned up temporary profile: ${tempUserDataDir}`);
+        }
+      } catch (cleanupError) {
+        this.debugLog(`Failed to clean up temporary profile: ${cleanupError}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Connect to browser without a profile but with proxy support (temporary session with proxy)
+   */
+  public async connectToBrowserWithoutProfileWithProxy(
+    options: ProxyConnectionWithoutProfileOptions
+  ): Promise<BrowserConnectionResult> {
+    if (!(await this.isPortOpen(this.debugPort))) {
+      throw new Error(`Port ${this.debugPort} is in use. Choose another port.`);
+    }
+
+    const tempProfileName = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const tempUserDataDir = this.getProfilePath(tempProfileName);
+
+    this.debugLog(`Creating temporary profile at: ${tempUserDataDir}`);
+
+    const args = [
+      `--remote-debugging-port=${this.debugPort}`,
+      `--user-data-dir=${tempUserDataDir}`,
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-features=BraveShields',
+      '--brave-ads-service-enabled=0'
+    ];
+
+    if (options.headless) {
+      args.push('--headless=new');
+    }
+
+    this.browserProcess = spawn(this.browserPath, args, {
+      detached: true,
+      stdio: 'pipe'
+    });
+
+    this.processPid = this.browserProcess.pid || undefined;
+
+    if (!this.processPid) {
+      throw new Error('Failed to start browser process');
+    }
+
+    if (this.browserProcess.stderr) {
+      this.browserProcess.stderr.on('data', (data) => {
+        this.debugLog(`Browser stderr: ${data}`);
+      });
+    }
+
+    this.debugLog(`✅ Browser started without profile + proxy (PID: ${this.processPid}).`);
+
+    let connected = false;
+    let lastError: any;
+
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        this.playwrightBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${this.debugPort}`);
+        connected = true;
+        break;
+      } catch (error) {
+        lastError = error;
+        this.debugLog(`Connection attempt ${i + 1} failed, retrying...`);
+      }
+    }
+
+    if (!connected) {
+      console.error(`Failed to connect to browser after 10 attempts: ${lastError}`);
+      await this.closeBrowser();
+      try {
+        if (fs.existsSync(tempUserDataDir)) {
+          fs.rmSync(tempUserDataDir, { recursive: true, force: true });
+        }
+      } catch (cleanupError) {
+        this.debugLog(`Failed to clean up temporary profile: ${cleanupError}`);
+      }
+      throw lastError;
+    }
+
+    try {
+      const fingerprint = await getFingerprintForProxy(options.proxy);
+
+      const context = await this.playwrightBrowser!.newContext({
+        proxy: options.proxy,
+        timezoneId: fingerprint.tz,
+        locale: fingerprint.locale,
+        viewport: { width: fingerprint.res[0], height: fingerprint.res[1] },
+        ignoreHTTPSErrors: true,
+      });
+
+      await this.applyAntiDetection(context);
+
+      const page = await context.newPage();
+
+      if (options.url) {
+        this.debugLog(`Going to ${options.url}...`);
+        await page.goto(options.url, { timeout: options.timeout || 60000 });
+        await page.waitForLoadState('networkidle', { timeout: options.timeout || 60000 });
+      }
+
+      (this as any)._tempProfilePath = tempUserDataDir;
+
+      this.debugLog('Browser ready without profile + proxy + fingerprint');
+      return { page, context, browser: this.playwrightBrowser! };
+    } catch (error) {
+      console.error(`Failed to setup browser with proxy: ${error}`);
+      await this.closeBrowser();
+      try {
+        if (fs.existsSync(tempUserDataDir)) {
+          fs.rmSync(tempUserDataDir, { recursive: true, force: true });
         }
       } catch (cleanupError) {
         this.debugLog(`Failed to clean up temporary profile: ${cleanupError}`);

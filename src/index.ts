@@ -23,7 +23,8 @@ export type {
   BrowserConnectionResult,
   BrowserType,
   BrowserPath,
-  AsyncScrapeResult
+  AsyncScrapeResult,
+  ProxyConnectionWithoutProfileOptions
 } from './types/index.js';
 
 // Re-export Playwright types for convenience

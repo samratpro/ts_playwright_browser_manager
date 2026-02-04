@@ -1,35 +1,115 @@
-import { BrowserManager } from "../core/browser-manager.js";
-import fs from 'fs/promises';
+/**
+ * Without-profile examples for BrowserManager
+ * Demonstrates temporary browser sessions (no persistent profile)
+ * with both basic and proxy-based usage
+ */
 
-const Sleep = (Second: number) => new Promise(resolve => setTimeout(resolve, Second * 1000));
+import { BrowserManager } from '../core/browser-manager.js';
+import type { ProxyConfig } from '../types/index.js';
 
-// Load configuration
-const loadConfig = async () => {
-    const configContent = await fs.readFile('config.json', 'utf-8');
-    return JSON.parse(configContent);
-};
+const Sleep = (seconds: number) => new Promise(resolve => setTimeout(resolve, seconds * 1000));
 
-const manager = new BrowserManager({ debug: true } as any);
+// ============================================================
+// Example 1: Basic usage without profile (no proxy)
+// ============================================================
+async function basicWithoutProfile() {
+  const manager = new BrowserManager({ debugPort: 9221 });
 
-(async () => {
-    try {
-        // Load config
-        const config = await loadConfig();
-        console.log(`[CONFIG] Loaded configuration from config.json`);
+  try {
+    const { page, context } = await manager.connectToBrowserWithoutProfile(
+      'https://www.google.com'
+    );
 
-        const { page } = await manager.connectToBrowserWithoutProfile(config.target.url);
-        await page.waitForLoadState('networkidle');
-        // Handle cookie consent more robustly
+    await page.waitForLoadState('networkidle');
+    console.log('Page Title:', await page.title());
 
-    
-        
+    // Navigate to another page
+    await page.goto('https://example.com');
+    console.log('Navigated to:', page.url());
 
-        await Sleep(50);
-        await manager.closeBrowser();
-        console.log('Test completed successfully!');
-    } catch (error) {
-        console.error('Test failed:', error);
-        process.exit(1);
-    }
-})();
+    await Sleep(5);
+  } finally {
+    await manager.closeBrowser();
+  }
+}
 
+// ============================================================
+// Example 2: Without profile + Proxy
+// ============================================================
+async function withoutProfileWithProxy() {
+  const manager = new BrowserManager({ debugPort: 9222 });
+
+  const proxyConfig: ProxyConfig = {
+    server: 'http://proxy.example.com:8080',
+    username: 'your_username',
+    password: 'your_password'
+  };
+
+  try {
+    const { page } = await manager.connectToBrowserWithoutProfileWithProxy({
+      proxy: proxyConfig,
+      url: 'https://iphey.com',
+      headless: false
+    });
+
+    console.log('Connected with proxy (no profile)!');
+    console.log('Page Title:', await page.title());
+
+    await Sleep(10);
+  } finally {
+    await manager.closeBrowser();
+  }
+}
+
+// ============================================================
+// Example 3: Multi-tab without profile
+// ============================================================
+async function multiTabWithoutProfile() {
+  const manager = new BrowserManager({ debugPort: 9223 });
+
+  try {
+    const { page, context } = await manager.connectToBrowserWithoutProfile(
+      'https://www.google.com'
+    );
+
+    const urls = [
+      'https://github.com',
+      'https://stackoverflow.com',
+      'https://example.com'
+    ];
+
+    const results = await Promise.all(
+      urls.map(async url => {
+        const newPage = await context.newPage();
+        await newPage.goto(url);
+        const title = await newPage.title();
+        await newPage.close();
+        return { url, title };
+      })
+    );
+
+    console.log('Multi-tab results:', results);
+  } finally {
+    await manager.closeBrowser();
+  }
+}
+
+// ============================================================
+// Run examples
+// ============================================================
+async function main() {
+  console.log('=== Without Profile Examples ===\n');
+
+  console.log('--- Example 1: Basic (no proxy) ---');
+  await basicWithoutProfile();
+
+  // Uncomment to run proxy example:
+  // console.log('\n--- Example 2: With Proxy ---');
+  // await withoutProfileWithProxy();
+
+  // Uncomment to run multi-tab example:
+  // console.log('\n--- Example 3: Multi-tab ---');
+  // await multiTabWithoutProfile();
+}
+
+main().catch(console.error);

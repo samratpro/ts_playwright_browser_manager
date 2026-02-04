@@ -26,6 +26,12 @@ export interface BrowserLaunchOptions {
 export interface ProxyConnectionOptions extends BrowserLaunchOptions {
     proxy: ProxyConfig;
 }
+export interface ProxyConnectionWithoutProfileOptions {
+    proxy: ProxyConfig;
+    url?: string;
+    headless?: boolean;
+    timeout?: number;
+}
 export interface CountryFingerprints {
     [key: string]: BrowserFingerprint;
 }

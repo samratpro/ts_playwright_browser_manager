@@ -1,4 +1,4 @@
-import type { BrowserManagerOptions, ProxyConnectionOptions, BrowserConnectionResult } from '../types/index.js';
+import type { BrowserManagerOptions, ProxyConnectionOptions, ProxyConnectionWithoutProfileOptions, BrowserConnectionResult } from '../types/index.js';
 /**
  * TypeScript BrowserManager for Playwright browser automation
  * Supports persistent profiles, proxy management, and multi-tab operations
@@ -46,6 +46,10 @@ export declare class BrowserManager {
      * Useful for scenarios where you don't need to persist browser data
      */
     connectToBrowserWithoutProfile(url?: string, headless?: boolean, timeout?: number): Promise<BrowserConnectionResult>;
+    /**
+     * Connect to browser without a profile but with proxy support (temporary session with proxy)
+     */
+    connectToBrowserWithoutProfileWithProxy(options: ProxyConnectionWithoutProfileOptions): Promise<BrowserConnectionResult>;
     /**
      * Connect to browser with proxy support
      */
