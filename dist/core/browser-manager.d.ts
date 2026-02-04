@@ -42,6 +42,11 @@ export declare class BrowserManager {
      */
     connectToBrowser(profileName: string, url?: string, headless?: boolean, timeout?: number): Promise<BrowserConnectionResult>;
     /**
+     * Connect to browser without a profile (temporary session)
+     * Useful for scenarios where you don't need to persist browser data
+     */
+    connectToBrowserWithoutProfile(url?: string, headless?: boolean, timeout?: number): Promise<BrowserConnectionResult>;
+    /**
      * Connect to browser with proxy support
      */
     connectToBrowserWithProxy(options: ProxyConnectionOptions): Promise<BrowserConnectionResult>;
@@ -69,9 +74,5 @@ export declare class BrowserManager {
      * Cleanup method for resource management
      */
     dispose(): Promise<void>;
-    /**
-     * Enable using the class in async dispose patterns
-     */
-    [Symbol.asyncDispose](): Promise<void>;
 }
 //# sourceMappingURL=browser-manager.d.ts.map

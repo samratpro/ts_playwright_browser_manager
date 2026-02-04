@@ -16,7 +16,7 @@ async function example1_BasicFranceProxy() {
 
   const franceProxy: ProxyConfig = {
     server: 'http://gw.dataimpulse.com:823',
-    username: 'user5505791abd0cd522901c__cr.fr',  // France
+    username: 'user5505791abd0cd5229__cr.fr',  // France
     password: 'passf5d3919c504d8fc9pass'
   };
 

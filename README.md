@@ -288,9 +288,10 @@ npm run dev:sync-example
 ```
 
 ### **Examples**
-- sync-example.ts  
-- async-example.ts  
-- proxy-example.ts  
+- sync-example.ts - Basic synchronous browser usage
+- async-example.ts - Async multi-tab operations
+- proxy-example.ts - Proxy configuration example
+- without-profile.ts - Usage without persistent profile
 
 ## 🚨 Troubleshooting
 
@@ -341,9 +342,9 @@ import { BrowserManager } from 'ts_playwright_browser_manager';
 ISC License
 
 ## 🔗 Links
-- GitHub Repository  
-- Playwright Docs  
-- TypeScript Docs  
+- [GitHub Repository](https://github.com/samratpro/ts_playwright_browser_manager)
+- [Playwright Docs](https://playwright.dev/docs/intro)
+- [TypeScript Docs](https://www.typescriptlang.org/docs/)
 
 ---
 

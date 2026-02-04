@@ -44,3 +44,8 @@ Thumbs.db
 # Misc caches
 .cache/
 .parcel-cache/
+
+# Sensitive/local config files
+config.json
+links.json
+.claude/

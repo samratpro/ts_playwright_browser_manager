@@ -207,6 +207,102 @@ export class BrowserManager {
         }
     }
     /**
+     * Connect to browser without a profile (temporary session)
+     * Useful for scenarios where you don't need to persist browser data
+     */
+    async connectToBrowserWithoutProfile(url, headless = false, timeout = 60000) {
+        if (!(await this.isPortOpen(this.debugPort))) {
+            throw new Error(`Port ${this.debugPort} is in use. Choose another port.`);
+        }
+        // Create a temporary profile directory for this session
+        // This is required for Brave/Chrome to start properly
+        const tempProfileName = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        const tempUserDataDir = this.getProfilePath(tempProfileName);
+        this.debugLog(`Creating temporary profile at: ${tempUserDataDir}`);
+        const args = [
+            `--remote-debugging-port=${this.debugPort}`,
+            `--user-data-dir=${tempUserDataDir}`,
+            '--no-first-run',
+            '--no-default-browser-check'
+        ];
+        if (headless) {
+            args.push('--headless=new');
+        }
+        this.browserProcess = spawn(this.browserPath, args, {
+            detached: true,
+            stdio: 'pipe'
+        });
+        this.processPid = this.browserProcess.pid || undefined;
+        if (!this.processPid) {
+            throw new Error('Failed to start browser process');
+        }
+        // Capture stderr for debugging
+        if (this.browserProcess.stderr) {
+            this.browserProcess.stderr.on('data', (data) => {
+                this.debugLog(`Browser stderr: ${data}`);
+            });
+        }
+        this.debugLog(`✅ Browser started without profile (PID: ${this.processPid}).`);
+        // Wait for browser to start with retry logic
+        let connected = false;
+        let lastError;
+        for (let i = 0; i < 10; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            try {
+                // Try to connect via Playwright CDP
+                this.playwrightBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${this.debugPort}`);
+                connected = true;
+                break;
+            }
+            catch (error) {
+                lastError = error;
+                this.debugLog(`Connection attempt ${i + 1} failed, retrying...`);
+            }
+        }
+        if (!connected) {
+            console.error(`Failed to connect to browser after 10 attempts: ${lastError}`);
+            await this.closeBrowser();
+            // Clean up temporary profile
+            try {
+                if (fs.existsSync(tempUserDataDir)) {
+                    fs.rmSync(tempUserDataDir, { recursive: true, force: true });
+                    this.debugLog(`Cleaned up temporary profile: ${tempUserDataDir}`);
+                }
+            }
+            catch (cleanupError) {
+                this.debugLog(`Failed to clean up temporary profile: ${cleanupError}`);
+            }
+            throw lastError;
+        }
+        try {
+            const context = this.playwrightBrowser.contexts()[0] || await this.playwrightBrowser.newContext();
+            const pages = context.pages();
+            const page = pages[0] || await context.newPage();
+            if (url) {
+                await page.goto(url, { timeout });
+                await page.waitForLoadState('load', { timeout });
+            }
+            // Store temp profile path for cleanup later
+            this._tempProfilePath = tempUserDataDir;
+            return { page, context, browser: this.playwrightBrowser };
+        }
+        catch (error) {
+            console.error(`Failed to navigate or setup page: ${error}`);
+            await this.closeBrowser();
+            // Clean up temporary profile
+            try {
+                if (fs.existsSync(tempUserDataDir)) {
+                    fs.rmSync(tempUserDataDir, { recursive: true, force: true });
+                    this.debugLog(`Cleaned up temporary profile: ${tempUserDataDir}`);
+                }
+            }
+            catch (cleanupError) {
+                this.debugLog(`Failed to clean up temporary profile: ${cleanupError}`);
+            }
+            throw error;
+        }
+    }
+    /**
      * Connect to browser with proxy support
      */
     async connectToBrowserWithProxy(options) {
@@ -309,6 +405,22 @@ export class BrowserManager {
             }
             this.browserProcess = undefined;
             this.processPid = undefined;
+        }
+        // Clean up temporary profile if it exists
+        const tempProfilePath = this._tempProfilePath;
+        if (tempProfilePath) {
+            try {
+                // Wait a bit for browser to fully close before cleanup
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                if (fs.existsSync(tempProfilePath)) {
+                    fs.rmSync(tempProfilePath, { recursive: true, force: true });
+                    this.debugLog(`Cleaned up temporary profile: ${tempProfilePath}`);
+                }
+                this._tempProfilePath = undefined;
+            }
+            catch (cleanupError) {
+                this.debugLog(`Failed to clean up temporary profile: ${cleanupError}`);
+            }
         }
         console.log('✅ Browser closed.');
     }

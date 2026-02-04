@@ -2,33 +2,57 @@
   "name": "ts_playwright_browser_manager",
   "version": "1.0.0",
   "type": "module",
-
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
-
-  "files": ["dist"],
-
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx src/examples/without-profile.ts"
   },
-  
   "dependencies": {
     "got": "^14.6.4",
+    "playwright": "^1.56.1",
     "ps-list": "^9.0.0",
-    "tree-kill": "^1.2.2",
-    "playwright": "^1.56.1"
+    "tree-kill": "^1.2.2"
   },
-
   "devDependencies": {
+    "@types/node": "^25.0.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
-  }
+  },
+  "description": "A powerful TypeScript-based Browser Manager for Playwright that simplifies managing persistent browser profiles, proxy configurations, and multi-tab automation with advanced fingerprinting capabilities.",
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samratpro/ts_playwright_browser_manager.git"
+  },
+  "keywords": [
+    "playwright",
+    "browser",
+    "automation",
+    "proxy",
+    "typescript",
+    "profile-manager",
+    "fingerprint",
+    "multi-tab"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/samratpro/ts_playwright_browser_manager/issues"
+  },
+  "homepage": "https://github.com/samratpro/ts_playwright_browser_manager#readme"
 }
